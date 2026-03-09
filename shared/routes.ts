@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { articles, insertArticleSchema, searchSchema, searchResponseSchema } from './schema';
+import { type Article, insertArticleSchema, searchSchema, searchResponseSchema } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -14,13 +14,31 @@ export const errorSchemas = {
   }),
 };
 
+export const evalSummarySchema = z.object({
+  scenarios: z.array(z.object({
+    scenarioId: z.number(),
+    query: z.string(),
+    matchedTitle: z.string().nullable(),
+    score: z.number(),
+    hit: z.boolean(),
+    queryTimeMs: z.number(),
+    runId: z.string(),
+  })),
+  summary: z.object({
+    total: z.number(),
+    hits: z.number(),
+    accuracy: z.string(),
+    avgLatencyMs: z.number(),
+  }),
+});
+
 export const api = {
   articles: {
     list: {
       method: 'GET' as const,
       path: '/api/articles' as const,
       responses: {
-        200: z.array(z.custom<typeof articles.$inferSelect>()),
+        200: z.array(z.custom<Article>()),
       },
     },
     create: {
@@ -28,7 +46,7 @@ export const api = {
       path: '/api/articles' as const,
       input: insertArticleSchema,
       responses: {
-        201: z.custom<typeof articles.$inferSelect>(),
+        201: z.custom<Article>(),
         400: errorSchemas.validation,
       },
     },
@@ -51,6 +69,21 @@ export const api = {
         400: errorSchemas.validation,
         500: errorSchemas.internal,
       }
+    },
+    evaluate: {
+      method: 'POST' as const,
+      path: '/api/agent/evaluate' as const,
+      responses: {
+        200: evalSummarySchema,
+        500: errorSchemas.internal,
+      }
+    },
+    logs: {
+      method: 'GET' as const,
+      path: '/api/agent/logs' as const,
+      responses: {
+        200: z.array(z.record(z.unknown())),
+      }
     }
   }
 };
@@ -69,4 +102,4 @@ export function buildUrl(path: string, params?: Record<string, string | number>)
 
 export type SearchRequest = z.infer<typeof searchSchema>;
 export type SearchResponse = z.infer<typeof searchResponseSchema>;
-export type ArticleResponse = typeof articles.$inferSelect;
+export type ArticleResponse = Article;

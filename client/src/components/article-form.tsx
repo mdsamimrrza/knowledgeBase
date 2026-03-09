@@ -54,7 +54,10 @@ export function ArticleFormDialog() {
           Add Article
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] border-border/50 shadow-2xl glass-panel">
+      <DialogContent 
+        className="sm:max-w-[600px] border-border/50 shadow-2xl glass-panel"
+        onPointerDownOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="text-2xl font-display">New Knowledge Entry</DialogTitle>
           <DialogDescription>

@@ -47,3 +47,29 @@ export function useAgentSearch() {
     },
   });
 }
+
+export function useEvaluate() {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch(api.agent.evaluate.path, {
+        method: api.agent.evaluate.method,
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error("Evaluation failed");
+      }
+
+      return await res.json();
+    },
+    onError: (error) => {
+      toast({
+        title: "Evaluation Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
