@@ -17,7 +17,13 @@ async def connect_db() -> AsyncIOMotorDatabase:
     if not mongo_uri:
         raise RuntimeError("DATABASE_URL must be set. Did you forget to provision a database?")
 
-    _client = AsyncIOMotorClient(mongo_uri)
+    _client = AsyncIOMotorClient(
+        mongo_uri,
+        maxPoolSize=20,
+        minPoolSize=5,
+        serverSelectionTimeoutMS=5000,
+        connectTimeoutMS=10000,
+    )
     # Use the default database from the URI, or fall back to "neuralquery"
     _db = _client.get_default_database(default="neuralquery")
     # Force a connection check

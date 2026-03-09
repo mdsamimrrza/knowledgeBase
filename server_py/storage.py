@@ -32,9 +32,9 @@ class DatabaseStorage:
         if count:
             print(f"Migrated {count} legacy articles with numeric IDs")
 
-    async def get_articles(self) -> list[Article]:
+    async def get_articles(self, limit: int = 50, offset: int = 0) -> list[Article]:
         db = get_db()
-        docs = await db.articles.find().sort("createdAt", 1).to_list(length=None)
+        docs = await db.articles.find().sort("createdAt", 1).skip(offset).limit(limit).to_list(length=limit)
         return [_to_article(d) for d in docs]
 
     async def get_article(self, article_id: int) -> Article | None:

@@ -23,10 +23,11 @@ from .db import close_db, connect_db
 from .routes import router, limiter
 from .schemas import InsertArticle
 from .storage import storage
+from .agent import configure_gemini
 
 
 async def _seed_database() -> None:
-    articles = await storage.get_articles()
+    articles = await storage.get_articles(limit=1)
     if len(articles) == 0:
         await storage.create_article(
             InsertArticle(
@@ -55,6 +56,7 @@ async def _seed_database() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    configure_gemini()
     await connect_db()
     await storage.migrate_old_documents()
     await _seed_database()
@@ -69,14 +71,29 @@ app = FastAPI(title="NeuralQuery API", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# CORS – allow the Vite dev server
+# CORS – restrict origins based on environment
+_allowed_origins = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:5173,http://localhost:5174,http://localhost:5000,http://127.0.0.1:5173",
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5000", "http://127.0.0.1:5173"],
+    allow_origins=[o.strip() for o in _allowed_origins],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
+
+
+# ---------- Security headers middleware ----------
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
 
 
 # ---------- Request logging middleware ----------

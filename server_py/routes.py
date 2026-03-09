@@ -1,7 +1,7 @@
 """FastAPI route definitions – mirrors server/routes.ts."""
 
-from typing import Annotated
-from fastapi import APIRouter, Body, HTTPException, Request
+from typing import Annotated, Optional
+from fastapi import APIRouter, Body, HTTPException, Query, Request
 from pydantic import ValidationError
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -9,6 +9,7 @@ from slowapi.util import get_remote_address
 from .agent import agent_search, run_evaluation, run_logs
 from .schemas import InsertArticle, SearchRequest
 from .storage import storage
+from .db import get_db
 
 # Rate limiter instance (shared with main.py)
 limiter = Limiter(key_func=get_remote_address)
@@ -16,12 +17,28 @@ limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/api")
 
 
+# ========== Health check ==========
+
+@router.get("/health")
+async def health_check():
+    try:
+        db = get_db()
+        await db.command("ping")
+        return {"status": "healthy", "database": "connected"}
+    except Exception:
+        raise HTTPException(status_code=503, detail="Database unreachable")
+
+
 # ========== Articles CRUD ==========
 
 @router.get("/articles")
 @limiter.limit("30/minute")
-async def list_articles(request: Request):
-    return await storage.get_articles()
+async def list_articles(
+    request: Request,
+    limit: int = Query(default=50, ge=1, le=200, description="Max articles to return"),
+    offset: int = Query(default=0, ge=0, description="Number of articles to skip"),
+):
+    return await storage.get_articles(limit=limit, offset=offset)
 
 
 @router.post("/articles", status_code=201)

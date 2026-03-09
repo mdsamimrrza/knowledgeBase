@@ -8,8 +8,8 @@ from pydantic import BaseModel, Field
 
 # ---------- Article ----------
 class InsertArticle(BaseModel):
-    title: str = Field(..., min_length=1)
-    content: str = Field(..., min_length=1)
+    title: str = Field(..., min_length=1, max_length=200)
+    content: str = Field(..., min_length=1, max_length=50000)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -50,7 +50,7 @@ class ToolCall(BaseModel):
 
 # ---------- Search ----------
 class SearchRequest(BaseModel):
-    query: str
+    query: str = Field(..., min_length=1, max_length=500)
     seed: Optional[int] = None
 
 

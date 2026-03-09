@@ -34,6 +34,11 @@ An intelligent knowledge base management system with an AI agent that retrieves,
 - **Evaluation Harness** — 10 built-in test scenarios with hit/miss tracking
 - **Guardrails** — Max step limit (10), tool timeout (30s), tool allowlist enforcement
 - **Polished UI** — Responsive React interface with animations, dark/light theme, and real-time agent feedback
+- **Security Hardened** — Prompt injection protection, CORS hardening, security headers, input length limits
+- **Error Resilient** — React ErrorBoundary, retry logic with exponential backoff for Gemini API calls
+- **Accessible** — ARIA labels on interactive elements, semantic HTML
+- **Health Monitoring** — `/api/health` endpoint with MongoDB connectivity check
+- **Pagination** — Configurable `limit`/`offset` on article listing
 
 ---
 
@@ -89,7 +94,9 @@ An intelligent knowledge base management system with an AI agent that retrieves,
 | **Database** | MongoDB Atlas (Motor — async PyMongo)               |
 | **AI Model** | Google Gemini 2.5 Flash Lite (`google-generativeai`) |
 | **Rate Limiting** | slowapi (IP-based throttling)                   |
+| **Security** | CORS hardening, security headers middleware, prompt injection protection |
 | **Validation** | Pydantic (backend), Zod (frontend shared types)  |
+| **Error Handling** | React ErrorBoundary, exponential backoff retry |
 | **Build**    | Vite (client)                                      |
 | **Runtime**  | Python venv, Uvicorn (ASGI server)                 |
 
@@ -110,9 +117,16 @@ Knowledge-Query-Agent/
 │   │   │   ├── article-form.tsx # Article creation form
 │   │   │   ├── layout.tsx       # Shell layout
 │   │   │   └── ui/              # shadcn/ui components (40+)
+│   │   ├── components/
+│   │   │   ├── error-boundary.tsx # React ErrorBoundary for crash recovery
+│   │   │   ├── app-sidebar.tsx  # Navigation sidebar
+│   │   │   ├── article-form.tsx # Article creation form
+│   │   │   ├── layout.tsx       # Shell layout
+│   │   │   └── ui/              # shadcn/ui components (40+)
 │   │   ├── hooks/
 │   │   │   ├── use-agent.ts     # useAgentSearch, useEvaluate
 │   │   │   ├── use-articles.ts  # useArticles, useCreateArticle, useDeleteArticle
+│   │   │   ├── use-debounce.ts  # Reusable debounce hook
 │   │   │   ├── use-mobile.tsx   # Responsive breakpoint hook
 │   │   │   └── use-toast.ts     # Toast notifications
 │   │   ├── lib/
@@ -163,7 +177,7 @@ Knowledge-Query-Agent/
 ### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/mdsamimrrza/knowledgeBase.git
 cd Knowledge-Query-Agent
 ```
 
@@ -216,6 +230,7 @@ Vite proxies `/api` requests to the FastAPI backend automatically.
 | `DATABASE_URL` | Yes      | MongoDB Atlas connection string (SRV format)     |
 | `GEMINI_API_KEY` | Yes    | Google Gemini API key from AI Studio             |
 | `PORT`         | No       | Server port (default: `5000`)                    |
+| `CORS_ORIGINS` | No       | Comma-separated allowed origins (default: `http://localhost:5173,http://localhost:5174`) |
 
 ---
 
@@ -235,9 +250,10 @@ Vite proxies `/api` requests to the FastAPI backend automatically.
 
 ### Articles (CRUD)
 
-| Method   | Path                 | Description            | Body                            |
+| Method   | Path                 | Description            | Body / Params                   |
 | -------- | -------------------- | ---------------------- | ------------------------------- |
-| `GET`    | `/api/articles`      | List all articles      | —                               |
+| `GET`    | `/api/health`        | Health check (DB ping) | —                               |
+| `GET`    | `/api/articles`      | List articles (paginated) | `?limit=50&offset=0`         |
 | `POST`   | `/api/articles`      | Create an article      | `{ title, content, metadata? }` |
 | `DELETE` | `/api/articles/:id`  | Delete an article by ID| —                               |
 
@@ -344,16 +360,34 @@ Seven deterministic states with full transition logging:
 - **Max Steps**: 10 (prevents infinite loops)
 - **Tool Timeout**: 30 seconds per tool call (via `asyncio.wait_for`)
 - **Tool Allowlist**: Only `json_store_search` and `llm_rank` are permitted
-- **Input Validation**: Pydantic models on all API inputs
+- **Input Validation**: Pydantic models on all API inputs (title ≤ 200, content ≤ 50,000, query ≤ 500 chars)
 - **JSON Parse Safety**: Graceful fallback if Gemini returns malformed JSON
+- **Prompt Injection Protection**: Query sanitization + anti-injection instruction in LLM prompt
+- **Retry with Backoff**: Transient Gemini errors (429, 503) retried up to 3 times with exponential backoff
 
-### 6. UI Features
+### 6. Security
+- **CORS Hardening**: Configurable origins via `CORS_ORIGINS` env var with explicit allowed methods/headers
+- **Security Headers**: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`
+- **Input Length Limits**: Title (200), content (50,000), query (500) characters
+- **Prompt Injection Defense**: `_sanitize_query()` strips control characters + anti-injection instruction in LLM system prompt
+
+### 7. Backend Resilience
+- **Health Endpoint**: `GET /api/health` pings MongoDB and returns `{ status: "healthy" }`
+- **Pagination**: `GET /api/articles?limit=50&offset=0` — configurable via query params
+- **Deferred API Key Check**: Gemini key validated at startup, not at module import
+- **Retry Logic**: Exponential backoff (1s → 2s) for transient Gemini errors (429/503)
+- **Connection Pooling**: Motor client configured with `maxPoolSize=20`, `minPoolSize=5`
+
+### 8. UI Features
 - Real-time state transition visualization with color-coded dots
 - Run ID and seed display
 - 3 metric cards (accuracy, latency, scanned)
 - Collapsible tool calls panel showing input/output JSON
 - Terminal-style execution logs
 - Evaluation harness results with hit/miss indicators
+- **Loading Skeletons**: Animated placeholder grid during search
+- **Error Boundary**: React ErrorBoundary catches crashes with a "Try Again" recovery UI
+- **Accessibility**: ARIA labels on all interactive elements (search input, buttons)
 
 ---
 

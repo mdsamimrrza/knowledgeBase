@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Terminal, Activity, Zap, Cpu, ArrowRight, Sparkles,
@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const STATE_LABELS: Record<string, { label: string; color: string }> = {
   IDLE: { label: "Idle", color: "bg-slate-400" },
@@ -77,6 +78,8 @@ export default function SearchPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="E.g., What are our security compliance guidelines?"
+            aria-label="Search query"
+            maxLength={500}
             className="w-full pl-16 pr-32 py-8 text-lg rounded-2xl bg-card border-2 border-border shadow-xl shadow-black/5 focus-visible:ring-4 focus-visible:ring-primary/10 focus-visible:border-primary transition-all duration-300"
           />
           <div className="absolute inset-y-0 right-2 flex items-center">
@@ -84,6 +87,7 @@ export default function SearchPage() {
               type="submit"
               size="lg"
               disabled={isPending || !query.trim()}
+              aria-label="Submit search query"
               className="rounded-xl px-6 font-semibold shadow-md"
             >
               {isPending ? (
@@ -108,10 +112,11 @@ export default function SearchPage() {
               value={seed}
               onChange={(e) => setSeed(e.target.value.replace(/\D/g, ""))}
               placeholder="Seed (optional, for reproducibility)"
+              aria-label="Random seed for reproducibility"
               className="max-w-[260px] h-9 text-sm"
             />
           </div>
-          <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
+          <Button variant="outline" size="sm" onClick={handleReset} aria-label="Reset search" className="gap-2">
             <RotateCcw className="w-4 h-4" /> Reset
           </Button>
           <Button
@@ -174,6 +179,26 @@ export default function SearchPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Loading Skeleton */}
+      {isPending && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
+          <div className="lg:col-span-5 flex flex-col gap-5">
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <div className="grid grid-cols-3 gap-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-24 rounded-xl" />
+              ))}
+            </div>
+            <Skeleton className="h-40 rounded-xl" />
+            <Skeleton className="h-48 rounded-xl" />
+          </div>
+          <div className="lg:col-span-7 flex flex-col gap-4">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-64 rounded-xl" />
+          </div>
+        </div>
+      )}
 
       {/* Results & Analytics Area */}
       <AnimatePresence mode="wait">
