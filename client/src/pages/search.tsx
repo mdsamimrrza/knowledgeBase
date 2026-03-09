@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Terminal, Activity, Zap, Cpu, ArrowRight } from "lucide-react";
+import { Search, Terminal, Activity, Zap, Cpu, ArrowRight, Sparkles } from "lucide-react";
 import { useAgentSearch } from "@/hooks/use-agent";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
