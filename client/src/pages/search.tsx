@@ -98,7 +98,7 @@ export default function SearchPage() {
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
                     <div className="text-3xl font-display font-bold text-foreground">
-                      {(data.metrics.retrievalAccuracy * 100).toFixed(1)}%
+                      {data.metrics.retrievalAccuracy.toFixed(1)}%
                     </div>
                   </CardContent>
                 </Card>
