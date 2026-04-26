@@ -1,4 +1,4 @@
-import { CalendarDays, Database, LogIn, LogOut, Mail, Search, Sparkles } from "lucide-react";
+import { CalendarDays, Database, Library, LogIn, LogOut, Mail, Search, Sparkles } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,

@@ -69,14 +69,15 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS – restrict origins based on environment
-_allowed_origins = os.getenv(
-    "CORS_ORIGINS",
-    "https://knowledge-vault-production.up.railway.app,https://knowledge-vault.up.railway.app,http://localhost:5173,http://localhost:5000,http://127.0.0.1:5173",
-).split(",")
+_cors_env = os.getenv("CORS_ORIGINS")
+if _cors_env:
+    _allowed_origins = [o.strip() for o in _cors_env.split(",") if o.strip()]
+else:
+    _allowed_origins = ["http://localhost:5173", "http://localhost:5000", "http://127.0.0.1:5173"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in _allowed_origins],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["*"],

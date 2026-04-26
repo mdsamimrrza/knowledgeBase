@@ -18,7 +18,12 @@ from .schemas import InsertArticle, LoginRequest, RegisterRequest, SearchRequest
 from .storage import storage
 
 security = HTTPBearer(auto_error=False)
-JWT_SECRET = os.getenv("JWT_SECRET", "super_secret_jwt_key_123_abc_xyz")
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET:
+    if os.getenv("NODE_ENV") == "production":
+        raise RuntimeError("CRITICAL: JWT_SECRET environment variable is NOT SET in production!")
+    JWT_SECRET = "dev_secret_key_for_local_testing_only"
+
 limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/api")
 

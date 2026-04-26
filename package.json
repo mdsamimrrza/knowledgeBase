@@ -4,11 +4,11 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "npx concurrently --kill-others \"npx vite --config vite.config.ts\" \"cd . && .\\venv\\Scripts\\python -m uvicorn server_py.main:app --host 0.0.0.0 --port 5000 --reload --proxy-headers --forwarded-allow-ips='*'\"",
+    "dev": "npx concurrently --kill-others \"npx vite --config vite.config.ts\" \"python -m uvicorn server_py.main:app --host 0.0.0.0 --port 5000 --reload --proxy-headers --forwarded-allow-ips='*'\"",
     "dev:frontend": "npx vite --config vite.config.ts",
-    "dev:backend": ".\\venv\\Scripts\\python -m uvicorn server_py.main:app --host 0.0.0.0 --port 5000 --reload --proxy-headers --forwarded-allow-ips='*'",
+    "dev:backend": "python -m uvicorn server_py.main:app --host 0.0.0.0 --port 5000 --reload --proxy-headers --forwarded-allow-ips='*'",
     "build": "npx vite build --config vite.config.ts",
-    "start": ".\\venv\\Scripts\\python -m uvicorn server_py.main:app --host 0.0.0.0 --port 5000 --proxy-headers --forwarded-allow-ips='*'"
+    "start": "python -m uvicorn server_py.main:app --host 0.0.0.0 --port ${PORT:-5000} --proxy-headers --forwarded-allow-ips='*'"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
