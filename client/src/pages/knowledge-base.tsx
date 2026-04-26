@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
-import { FileText, Trash2, Database, AlertCircle, ShieldCheck, LogIn } from "lucide-react";
+import { FileText, Trash2, Database, AlertCircle, ShieldCheck, LogIn, ExternalLink, PlusCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useArticles, useDeleteArticle } from "@/hooks/use-articles";
 import { useUser } from "@/hooks/use-auth";
@@ -11,7 +11,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import {
   Table,
-  Body,
   TableCell,
   TableHead,
   TableHeader,
@@ -31,6 +30,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 
+const KNOWLEDGE_VAULT_URL = "https://knowledge-vault.up.railway.app";
+
 export default function KnowledgeBasePage() {
   const { data: user } = useUser();
   const isAdmin = user?.isAdmin;
@@ -40,8 +41,8 @@ export default function KnowledgeBasePage() {
   const { mutate: deleteArticle, isPending: isDeleting } = useDeleteArticle();
 
   return (
-    <div className="flex flex-col gap-8 max-w-5xl mx-auto py-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="flex flex-col gap-8 max-w-5xl mx-auto py-6 px-4 sm:px-6">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>
           <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight text-foreground flex items-center gap-3">
             <Database className="w-8 h-8 text-primary" />
@@ -51,7 +52,15 @@ export default function KnowledgeBasePage() {
             Manage the documents the agent uses for semantic search.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Knowledge Vault Redirection */}
+          <a href={KNOWLEDGE_VAULT_URL} target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/5">
+              <ExternalLink className="w-4 h-4" />
+              Knowledge Vault
+            </Button>
+          </a>
+
           {!user ? (
             <Button 
               variant="outline" 
@@ -71,6 +80,12 @@ export default function KnowledgeBasePage() {
                 <ShieldCheck className="w-4 h-4" />
                 Admin Access
               </Badge>
+              <a href={`${KNOWLEDGE_VAULT_URL}/new`} target="_blank" rel="noopener noreferrer">
+                <Button className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
+                  <PlusCircle className="w-4 h-4" />
+                  New Article
+                </Button>
+              </a>
               <ArticleFormDialog />
             </>
           )}
@@ -97,7 +112,7 @@ export default function KnowledgeBasePage() {
             </div>
             <h3 className="text-xl font-display font-semibold text-foreground mb-2">No documents found</h3>
             <p className="text-muted-foreground max-w-md mx-auto">
-              Your knowledge base is empty. Add articles to allow the agent to start answering queries.
+              Your knowledge base is empty. Add articles in the Knowledge Vault to allow the agent to start answering queries.
             </p>
           </div>
         ) : (
@@ -118,9 +133,15 @@ export default function KnowledgeBasePage() {
                     <TableRow key={article.id} className="group transition-colors">
                       <TableCell className="font-medium align-top pt-4">
                         <div className="flex flex-col gap-1">
-                          <span className="font-display text-foreground group-hover:text-primary transition-colors">
+                          <a 
+                            href={`${KNOWLEDGE_VAULT_URL}/article/${article.id}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="font-display text-foreground hover:text-primary transition-colors flex items-center gap-1.5 group/link"
+                          >
                             {article.title}
-                          </span>
+                            <ExternalLink className="w-3 h-3 opacity-0 group-hover/link:opacity-50 transition-opacity" />
+                          </a>
                         </div>
                       </TableCell>
                       <TableCell className="align-top pt-4">
@@ -135,7 +156,14 @@ export default function KnowledgeBasePage() {
                       </TableCell>
                       <TableCell className="align-top pt-4 text-right">
                         {isAdmin && (
-                          <DeleteDialog article={article} onDelete={deleteArticle} isDeleting={isDeleting} />
+                          <div className="flex justify-end gap-2">
+                            <a href={`${KNOWLEDGE_VAULT_URL}/edit/${article.id}`} target="_blank" rel="noopener noreferrer">
+                              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary hover:bg-primary/10">
+                                <ExternalLink className="w-4 h-4" />
+                              </Button>
+                            </a>
+                            <DeleteDialog article={article} onDelete={deleteArticle} isDeleting={isDeleting} />
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
@@ -149,11 +177,21 @@ export default function KnowledgeBasePage() {
               {articles?.map((article) => (
                 <div key={article.id} className="p-4 flex flex-col gap-3 hover:bg-secondary/20 transition-colors">
                   <div className="flex justify-between items-start gap-4">
-                    <h3 className="font-display font-bold text-foreground leading-tight">
+                    <a 
+                      href={`${KNOWLEDGE_VAULT_URL}/article/${article.id}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="font-display font-bold text-foreground leading-tight hover:text-primary"
+                    >
                       {article.title}
-                    </h3>
+                    </a>
                     {isAdmin && (
-                      <DeleteDialog article={article} onDelete={deleteArticle} isDeleting={isDeleting} />
+                      <div className="flex items-center gap-2">
+                        <a href={`${KNOWLEDGE_VAULT_URL}/edit/${article.id}`} target="_blank" rel="noopener noreferrer">
+                           <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                        </a>
+                        <DeleteDialog article={article} onDelete={deleteArticle} isDeleting={isDeleting} />
+                      </div>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground line-clamp-3">

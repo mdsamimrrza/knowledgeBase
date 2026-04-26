@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Terminal, Activity, Zap, Cpu, ArrowRight, Sparkles,
   RotateCcw, Hash, Database, Play, CheckCircle2, XCircle,
-  ChevronDown, ChevronRight, Layers, LogIn, ShieldAlert
+  ChevronDown, ChevronRight, Layers, LogIn, ShieldAlert, ExternalLink
 } from "lucide-react";
+
 import { useAgentSearch, useEvaluate } from "@/hooks/use-agent";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+
+const KNOWLEDGE_VAULT_URL = "https://knowledge-vault.up.railway.app";
 
 const STATE_LABELS: Record<string, { label: string; color: string }> = {
   IDLE: { label: "Idle", color: "bg-slate-400" },
@@ -403,9 +406,17 @@ export default function SearchPage() {
                       <Card className="hover:shadow-lg transition-all duration-300 border-border/60 hover:border-primary/30 group">
                         <CardHeader className="pb-3 flex flex-row items-start justify-between gap-4">
                           <div className="space-y-1.5">
-                            <CardTitle className="text-xl font-display group-hover:text-primary transition-colors">
-                              {result.article.title}
-                            </CardTitle>
+                            <a 
+                              href={`${KNOWLEDGE_VAULT_URL}/article/${result.article.id}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="block group/link"
+                            >
+                              <CardTitle className="text-xl font-display group-hover/link:text-primary transition-colors flex items-center gap-2">
+                                {result.article.title}
+                                <ExternalLink className="w-4 h-4 opacity-0 group-hover/link:opacity-50 transition-opacity" />
+                              </CardTitle>
+                            </a>
                             <div className="text-xs text-muted-foreground font-mono flex items-center gap-2">
                               Indexed:{" "}
                               {new Date(result.article.createdAt!).toLocaleDateString()}

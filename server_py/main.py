@@ -73,7 +73,7 @@ _cors_env = os.getenv("CORS_ORIGINS")
 if _cors_env:
     _allowed_origins = [o.strip() for o in _cors_env.split(",") if o.strip()]
 else:
-    _allowed_origins = ["http://localhost:5173", "http://localhost:5000", "http://127.0.0.1:5173"]
+    _allowed_origins = ["http://localhost:5173", "http://localhost:5000", "http://127.0.0.1:5173", "https://knowledgebase-wdt5.onrender.com", "https://knowledge-vault.up.railway.app"]
 
 app.add_middleware(
     CORSMiddleware,
