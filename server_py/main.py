@@ -13,10 +13,9 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from .db import close_db, connect_db
@@ -24,7 +23,6 @@ from .routes import router, limiter
 from .schemas import InsertArticle
 from .storage import storage
 from .agent import configure_gemini
-
 
 async def _seed_database() -> None:
     articles = await storage.get_articles(limit=1)
@@ -58,7 +56,6 @@ async def lifespan(app: FastAPI):
     # Startup
     configure_gemini()
     await connect_db()
-    await storage.migrate_old_documents()
     await _seed_database()
     yield
     # Shutdown
@@ -82,7 +79,7 @@ app.add_middleware(
     allow_origins=[o.strip() for o in _allowed_origins],
     allow_credentials=True,
     allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_headers=["*"],
 )
 
 

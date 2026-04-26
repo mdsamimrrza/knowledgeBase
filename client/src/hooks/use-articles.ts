@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
 import { type Article, type InsertArticle } from "@shared/schema";
 import { z } from "zod";
@@ -13,14 +13,22 @@ function parseWithLogging<T>(schema: z.ZodSchema<T>, data: unknown, label: strin
   return result.data;
 }
 
-export function useArticles() {
-  return useQuery({
-    queryKey: [api.articles.list.path],
-    queryFn: async () => {
-      const res = await fetch(api.articles.list.path, { credentials: "include" });
+export function useArticles(limit = 10) {
+  return useInfiniteQuery({
+    queryKey: [api.articles.list.path, limit],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam = 0 }) => {
+      const url = new URL(api.articles.list.path, window.location.origin);
+      url.searchParams.set("limit", limit.toString());
+      url.searchParams.set("offset", pageParam.toString());
+      const res = await fetch(url.toString(), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch articles");
       const data = await res.json();
       return parseWithLogging(api.articles.list.responses[200], data, "articles.list");
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length < limit) return undefined;
+      return allPages.length * limit;
     },
   });
 }
@@ -34,7 +42,10 @@ export function useCreateArticle() {
       const validated = api.articles.create.input.parse(data);
       const res = await fetch(api.articles.create.path, {
         method: api.articles.create.method,
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("admin_token") || ""}`
+        },
         body: JSON.stringify(validated),
         credentials: "include",
       });
@@ -76,6 +87,9 @@ export function useDeleteArticle() {
       const url = buildUrl(api.articles.delete.path, { id });
       const res = await fetch(url, {
         method: api.articles.delete.method,
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("admin_token") || ""}`
+        },
         credentials: "include",
       });
 

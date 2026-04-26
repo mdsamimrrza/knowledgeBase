@@ -10,10 +10,12 @@ export const insertArticleSchema = z.object({
 export type InsertArticle = z.infer<typeof insertArticleSchema>;
 
 export interface Article {
-  id: number;
+  id: string;
   title: string;
   content: string;
   metadata: Record<string, unknown>;
+  tags: string[];
+  source: string;
   createdAt: Date | string;
 }
 

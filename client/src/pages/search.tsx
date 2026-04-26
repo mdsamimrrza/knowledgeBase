@@ -1,9 +1,10 @@
 import { useState, useCallback } from "react";
+import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Terminal, Activity, Zap, Cpu, ArrowRight, Sparkles,
   RotateCcw, Hash, Database, Play, CheckCircle2, XCircle,
-  ChevronDown, ChevronRight, Layers,
+  ChevronDown, ChevronRight, Layers, LogIn, ShieldAlert
 } from "lucide-react";
 import { useAgentSearch, useEvaluate } from "@/hooks/use-agent";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,14 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const STATE_LABELS: Record<string, { label: string; color: string }> = {
   IDLE: { label: "Idle", color: "bg-slate-400" },
@@ -28,7 +37,10 @@ export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [seed, setSeed] = useState("");
   const [toolsExpanded, setToolsExpanded] = useState(false);
-  const { mutate: search, data, isPending, reset } = useAgentSearch();
+  const [showLimitDialog, setShowLimitDialog] = useState(false);
+  const [, setLocation] = useLocation();
+  
+  const { mutate: search, data, isPending, reset, error } = useAgentSearch();
   const { mutate: runEval, data: evalData, isPending: evalPending } = useEvaluate();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -43,6 +55,17 @@ export default function SearchPage() {
     setSeed("");
     reset();
   };
+
+  const handleSearchError = useCallback(() => {
+    if (error?.message === "FREE_LIMIT_REACHED") {
+      setShowLimitDialog(true);
+    }
+  }, [error]);
+
+  // Handle errors automatically
+  if (error?.message === "FREE_LIMIT_REACHED" && !showLimitDialog) {
+    setShowLimitDialog(true);
+  }
 
   const renderAccuracyColor = (score: number) => {
     if (score >= 80) return "text-emerald-500 bg-emerald-500/10 border-emerald-500/20";
@@ -384,8 +407,6 @@ export default function SearchPage() {
                               {result.article.title}
                             </CardTitle>
                             <div className="text-xs text-muted-foreground font-mono flex items-center gap-2">
-                              ID: {result.article.id}
-                              <Separator orientation="vertical" className="h-3" />
                               Indexed:{" "}
                               {new Date(result.article.createdAt!).toLocaleDateString()}
                             </div>
@@ -420,6 +441,40 @@ export default function SearchPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Free Limit Reached Dialog */}
+      <Dialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
+        <DialogContent className="sm:max-w-md glass-card border-amber-500/20 shadow-2xl">
+          <DialogHeader className="flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mb-4">
+              <ShieldAlert className="w-8 h-8 text-amber-500" />
+            </div>
+            <DialogTitle className="text-2xl font-display font-bold">
+              Free Search Limit Reached
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground pt-2">
+              You've used all 4 of your free daily searches. 
+              Sign in to unlock unlimited queries and build your knowledge base.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-row gap-3 pt-4">
+            <Button 
+              variant="outline" 
+              className="w-full sm:w-auto" 
+              onClick={() => setShowLimitDialog(false)}
+            >
+              Later
+            </Button>
+            <Button 
+              className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+              onClick={() => setLocation("/auth")}
+            >
+              <LogIn className="w-4 h-4" />
+              Sign In Now
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

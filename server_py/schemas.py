@@ -9,15 +9,17 @@ from pydantic import BaseModel, Field
 # ---------- Article ----------
 class InsertArticle(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
-    content: str = Field(..., min_length=1, max_length=50000)
+    content: str = Field(..., min_length=1, max_length=100000)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class Article(BaseModel):
-    id: int
+    id: str
     title: str
     content: str
     metadata: dict[str, Any] = Field(default_factory=dict)
+    tags: list[str] = Field(default_factory=list)
+    source: str = "manual"
     createdAt: datetime | str
 
 
@@ -86,6 +88,23 @@ class EvalSummary(BaseModel):
     scenarios: list[EvalScenarioResult]
     summary: dict[str, Any]
 
+
+# ---------- Auth ----------
+class LoginRequest(BaseModel):
+    email: str = Field(..., pattern=r"^\S+@\S+\.\S+$")
+    password: str = Field(..., min_length=6)
+
+class RegisterRequest(BaseModel):
+    username: str | None = Field(default=None, min_length=3, max_length=50)
+    email: str = Field(..., pattern=r"^\S+@\S+\.\S+$")
+    password: str = Field(..., min_length=6)
+
+class User(BaseModel):
+    id: str
+    username: str
+    email: str
+    isAdmin: bool = False
+    plan: str = "free"
 
 # ---------- Error ----------
 class ErrorResponse(BaseModel):

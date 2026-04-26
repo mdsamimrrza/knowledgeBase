@@ -90,7 +90,7 @@ An intelligent knowledge base management system with an AI agent that retrieves,
 | **Animations** | Framer Motion                                   |
 | **Routing**  | wouter                                             |
 | **Data Fetching** | TanStack React Query v5                       |
-| **Backend**  | Python 3.11, FastAPI, Uvicorn                      |
+| **Backend**  | Python 3.13, FastAPI, Uvicorn                      |
 | **Database** | MongoDB Atlas (Motor — async PyMongo)               |
 | **AI Model** | Google Gemini 2.5 Flash Lite (`google-generativeai`) |
 | **Rate Limiting** | slowapi (IP-based throttling)                   |
@@ -164,7 +164,7 @@ Knowledge-Query-Agent/
 
 ## Prerequisites
 
-- **Python** ≥ 3.11
+- **Python** ≥ 3.13 (Recommended)
 - **Node.js** ≥ 18.x (for frontend tooling)
 - **npm** ≥ 9.x
 - **MongoDB Atlas** account (free tier works) — [Create Cluster](https://www.mongodb.com/atlas)

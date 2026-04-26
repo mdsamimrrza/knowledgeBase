@@ -22,12 +22,22 @@ export function useAgentSearch() {
       
       const res = await fetch(api.agent.search.path, {
         method: api.agent.search.method,
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("admin_token") || ""}`
+        },
         body: JSON.stringify(validated),
         credentials: "include",
       });
 
       if (!res.ok) {
+        if (res.status === 403) {
+          const err = await res.json();
+          if (err.detail === "FREE_LIMIT_REACHED") {
+            throw new Error("FREE_LIMIT_REACHED");
+          }
+          throw new Error(err.detail || "Access denied");
+        }
         if (res.status === 400) {
           const err = await res.json();
           throw new Error(err.message || "Invalid search request");

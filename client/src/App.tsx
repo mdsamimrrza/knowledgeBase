@@ -8,19 +8,29 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import NotFound from "@/pages/not-found";
 import SearchPage from "@/pages/search";
 import KnowledgeBasePage from "@/pages/knowledge-base";
+import AuthPage from "@/pages/auth";
 
 function Router() {
   return (
-    <Layout>
-      <Switch>
-        <Route path="/">
+    <Switch>
+      <Route path="/">
+        <Layout>
           <Redirect to="/search" />
-        </Route>
-        <Route path="/search" component={SearchPage} />
-        <Route path="/knowledge-base" component={KnowledgeBasePage} />
-        <Route component={NotFound} />
-      </Switch>
-    </Layout>
+        </Layout>
+      </Route>
+      <Route path="/auth" component={AuthPage} />
+      <Route path="/search">
+        <Layout>
+          <SearchPage />
+        </Layout>
+      </Route>
+      <Route path="/knowledge-base">
+        <Layout>
+          <KnowledgeBasePage />
+        </Layout>
+      </Route>
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 

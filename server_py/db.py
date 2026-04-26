@@ -24,11 +24,17 @@ async def connect_db() -> AsyncIOMotorDatabase:
         serverSelectionTimeoutMS=5000,
         connectTimeoutMS=10000,
     )
-    # Use the default database from the URI, or fall back to "neuralquery"
-    _db = _client.get_default_database(default="neuralquery")
+    # Use the DB name from env var; default is the shared KV database
+    db_name = os.getenv("DB_NAME", "knowledge-vault")
+    _db = _client.get_default_database(default=db_name)
     # Force a connection check
     await _client.admin.command("ping")
-    print("Connected to MongoDB")
+    # Create indexes for optimal pagination and retrieval
+    await _db.articles.create_index([("createdAt", -1)])
+    # Anonymous usage tracking: unique IP and auto-reset after 24h
+    await _db.anonymous_usage.create_index("ip", unique=True)
+    await _db.anonymous_usage.create_index("lastAt", expireAfterSeconds=86400)
+    print(f"Connected to MongoDB — database: {_db.name}")
     return _db
 
 
@@ -46,16 +52,3 @@ def get_db() -> AsyncIOMotorDatabase:
         raise RuntimeError("Database not connected – call connect_db() first")
     return _db
 
-
-async def get_next_id(name: str) -> int:
-    """Auto-increment counter, mirrors the Mongoose Counter collection."""
-    db = get_db()
-    result = await db.counters.find_one_and_update(
-        {"_id": name},
-        {"$inc": {"seq": 1}},
-        upsert=True,
-        return_document=True,
-    )
-    if result is None:
-        raise RuntimeError(f"Failed to generate ID for \"{name}\"")
-    return int(result["seq"])
