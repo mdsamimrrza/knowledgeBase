@@ -9,12 +9,12 @@ from pydantic import BaseModel, Field
 # ---------- Article ----------
 class InsertArticle(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
-    content: str = Field(..., min_length=1, max_length=100000)
+    content: str = Field(..., min_length=1, max_length=50000)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class Article(BaseModel):
-    id: str
+    id: int
     title: str
     content: str
     metadata: dict[str, Any] = Field(default_factory=dict)
@@ -58,19 +58,15 @@ class SearchRequest(BaseModel):
 
 class SearchResult(BaseModel):
     article: Article
-    score: Optional[int | float] = None
-    explanation: Optional[str] = None
+    score: int
+    explanation: str
 
 
 class SearchResponse(BaseModel):
     runId: str
     results: list[SearchResult]
-    metrics: dict[str, Any]
-    stateTransitions: list[StateTransition]
-    toolCalls: list[ToolCall]
+    metrics: dict[str, int]
     currentState: str
-    seed: Optional[int] = None
-    logs: list[str] = []
 
 
 # ---------- Evaluation ----------

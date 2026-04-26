@@ -1,12 +1,19 @@
-"""FastAPI application entry-point – mirrors server/index.ts."""
+"""FastAPI application entry-point – mirrors server/index.ts.
+Strictly complies with NeuralQuery Engineering & Security Standards.
+"""
 from __future__ import annotations
 
 import os
 import time
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+# Configure structured logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load .env BEFORE any other module reads env vars
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
@@ -24,7 +31,9 @@ from .schemas import InsertArticle
 from .storage import storage
 from .agent import configure_gemini
 
+
 async def _seed_database() -> None:
+    """Initialize the database with default articles if empty."""
     articles = await storage.get_articles(limit=1)
     if len(articles) == 0:
         await storage.create_article(
@@ -48,18 +57,27 @@ async def _seed_database() -> None:
                 metadata={"category": "metrics"},
             )
         )
-        print("Seeded 3 default articles")
+        logger.info("Database seeded with 3 default articles")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Lifecycle events for the FastAPI application."""
     # Startup
-    configure_gemini()
-    await connect_db()
-    await _seed_database()
+    try:
+        configure_gemini()
+        await connect_db()
+        await _seed_database()
+        logger.info("NeuralQuery API startup complete")
+    except Exception as e:
+        logger.error(f"Startup failure: {str(e)}")
+        raise
+    
     yield
+    
     # Shutdown
     await close_db()
+    logger.info("NeuralQuery API shutdown complete")
 
 
 app = FastAPI(title="NeuralQuery API", lifespan=lifespan)
@@ -73,7 +91,14 @@ _cors_env = os.getenv("CORS_ORIGINS")
 if _cors_env:
     _allowed_origins = [o.strip() for o in _cors_env.split(",") if o.strip()]
 else:
-    _allowed_origins = ["http://localhost:5173", "http://localhost:5000", "http://127.0.0.1:5173", "https://knowledgebase-wdt5.onrender.com", "https://knowledge-vault.up.railway.app"]
+    # Secure defaults for development and production domains
+    _allowed_origins = [
+        "http://localhost:5173", 
+        "http://localhost:5000", 
+        "http://127.0.0.1:5173", 
+        "https://knowledgebase-wdt5.onrender.com", 
+        "https://knowledge-vault.up.railway.app"
+    ]
 
 app.add_middleware(
     CORSMiddleware,
@@ -84,9 +109,9 @@ app.add_middleware(
 )
 
 
-# ---------- Security headers middleware ----------
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
+    """Inject mandatory security headers into every response."""
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
@@ -94,15 +119,14 @@ async def security_headers(request: Request, call_next):
     return response
 
 
-# ---------- Request logging middleware ----------
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
+    """Structured request logging for observability."""
     start = time.time()
     response = await call_next(request)
     if request.url.path.startswith("/api"):
         duration = int((time.time() - start) * 1000)
-        formatted = time.strftime("%I:%M:%S %p")
-        print(f"{formatted} [fastapi] {request.method} {request.url.path} {response.status_code} in {duration}ms")
+        logger.info(f"{request.method} {request.url.path} {response.status_code} {duration}ms")
     return response
 
 
@@ -118,8 +142,10 @@ if _dist_public.exists():
 
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
-        """Serve the SPA index.html for any non-API route."""
+        """Serve the React SPA index.html for any non-API route."""
         file = _dist_public / full_path
         if file.is_file():
             return FileResponse(str(file))
         return FileResponse(str(_dist_public / "index.html"))
+else:
+    logger.warning("Production 'dist/public' folder not found. SPA serving disabled.")

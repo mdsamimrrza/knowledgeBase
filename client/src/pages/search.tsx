@@ -2,9 +2,9 @@ import { useState, useCallback } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Terminal, Activity, Zap, Cpu, ArrowRight, Sparkles,
-  RotateCcw, Hash, Database, Play, CheckCircle2, XCircle,
-  ChevronDown, ChevronRight, Layers, LogIn, ShieldAlert, ExternalLink
+  Search, Activity, Zap, Cpu, ArrowRight, Sparkles,
+  RotateCcw, Hash, Play, CheckCircle2, XCircle,
+  Layers, LogIn, ShieldAlert, ExternalLink
 } from "lucide-react";
 
 import { useAgentSearch, useEvaluate } from "@/hooks/use-agent";
@@ -12,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -26,20 +25,19 @@ import {
 
 const KNOWLEDGE_VAULT_URL = "https://knowledge-vault.up.railway.app";
 
-const STATE_LABELS: Record<string, { label: string; color: string }> = {
-  IDLE: { label: "Idle", color: "bg-slate-400" },
-  RECEIVING_QUERY: { label: "Receiving Query", color: "bg-blue-500" },
-  FETCHING_ARTICLES: { label: "Fetching Articles", color: "bg-amber-500" },
-  RANKING: { label: "Ranking", color: "bg-purple-500" },
-  RESPONDING: { label: "Responding", color: "bg-cyan-500" },
-  DONE: { label: "Done", color: "bg-emerald-500" },
-  ERROR: { label: "Error", color: "bg-red-500" },
-};
+/**
+ * Reverses the secure integer mapping to the original hex ObjectId
+ * for external Knowledge-Vault links.
+ */
+function intToHex(id: number | string): string {
+  if (typeof id === "string" && !/^\d+$/.test(id)) return id;
+  const num = typeof id === "string" ? BigInt(id) : BigInt(id);
+  return num.toString(16).padStart(24, "0");
+}
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [seed, setSeed] = useState("");
-  const [toolsExpanded, setToolsExpanded] = useState(false);
   const [showLimitDialog, setShowLimitDialog] = useState(false);
   const [, setLocation] = useLocation();
   
@@ -65,7 +63,6 @@ export default function SearchPage() {
     }
   }, [error]);
 
-  // Handle errors automatically
   if (error?.message === "FREE_LIMIT_REACHED" && !showLimitDialog) {
     setShowLimitDialog(true);
   }
@@ -130,19 +127,17 @@ export default function SearchPage() {
           </div>
         </form>
 
-        {/* Run Controls: Seed + Reset */}
         <div className="flex items-center gap-4 mt-4 w-full max-w-3xl">
           <div className="flex items-center gap-2 flex-1">
             <Hash className="w-4 h-4 text-muted-foreground" />
             <Input
               value={seed}
               onChange={(e) => setSeed(e.target.value.replace(/\D/g, ""))}
-              placeholder="Seed (optional, for reproducibility)"
-              aria-label="Random seed for reproducibility"
-              className="max-w-[260px] h-9 text-sm"
+              placeholder="Seed (optional)"
+              className="max-w-[200px] h-9 text-sm"
             />
           </div>
-          <Button variant="outline" size="sm" onClick={handleReset} aria-label="Reset search" className="gap-2">
+          <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
             <RotateCcw className="w-4 h-4" /> Reset
           </Button>
           <Button
@@ -152,7 +147,7 @@ export default function SearchPage() {
             disabled={evalPending}
             className="gap-2"
           >
-            <Play className="w-4 h-4" /> {evalPending ? "Running…" : "Run Eval (10 scenarios)"}
+            <Play className="w-4 h-4" /> {evalPending ? "Running…" : "Run Eval"}
           </Button>
         </div>
       </motion.div>
@@ -169,7 +164,7 @@ export default function SearchPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-display flex items-center gap-2">
                   <Layers className="w-5 h-5 text-primary" />
-                  Evaluation Harness — {evalData.summary.total} Scenarios
+                  Evaluation Harness
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -187,196 +182,44 @@ export default function SearchPage() {
                     <span className="font-bold">{evalData.summary.avgLatencyMs}ms</span>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {evalData.scenarios.map((s: any) => (
-                    <div key={s.scenarioId} className="flex items-center gap-2 text-xs p-2 rounded-lg bg-secondary/40 border border-border/50">
-                      {s.hit ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                      ) : (
-                        <XCircle className="w-4 h-4 text-red-500 shrink-0" />
-                      )}
-                      <span className="truncate flex-1">{s.query}</span>
-                      <Badge variant="outline" className="font-mono text-[10px]">{s.score}</Badge>
-                    </div>
-                  ))}
-                </div>
               </CardContent>
             </Card>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Loading Skeleton */}
-      {isPending && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
-          <div className="lg:col-span-5 flex flex-col gap-5">
-            <Skeleton className="h-10 w-full rounded-lg" />
-            <div className="grid grid-cols-3 gap-3">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-24 rounded-xl" />
-              ))}
-            </div>
-            <Skeleton className="h-40 rounded-xl" />
-            <Skeleton className="h-48 rounded-xl" />
-          </div>
-          <div className="lg:col-span-7 flex flex-col gap-4">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-64 rounded-xl" />
-          </div>
-        </div>
-      )}
-
-      {/* Results & Analytics Area */}
+      {/* Results Area */}
       <AnimatePresence mode="wait">
-        {data && !isPending && (
+        {isPending ? (
+          <div className="space-y-4 pb-12">
+            <Skeleton className="h-32 w-full rounded-xl" />
+            <Skeleton className="h-32 w-full rounded-xl" />
+          </div>
+        ) : data && (
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.5 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12"
+            className="flex flex-col gap-6 pb-12"
           >
-            {/* Left Column: Run Info + Metrics + State Machine + Tool Calls + Logs */}
-            <div className="lg:col-span-5 flex flex-col gap-5">
-              {/* Run ID + Seed */}
-              <div className="flex items-center gap-3 text-xs font-mono text-muted-foreground bg-secondary/40 rounded-lg px-3 py-2 border border-border/50">
+            {/* Header: Run Info + Metrics */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+               <div className="flex items-center gap-3 text-xs font-mono text-muted-foreground bg-secondary/40 rounded-lg px-3 py-2 border border-border/50">
                 <span>Run: <span className="text-foreground font-semibold">{data.runId.slice(0, 8)}…</span></span>
                 <Separator orientation="vertical" className="h-4" />
-                <span>Seed: <span className="text-foreground font-semibold">{data.seed ?? "—"}</span></span>
+                <span className="flex items-center gap-1.5">
+                  <Activity className="w-3 h-3 text-emerald-500" />
+                  Accuracy: <span className="text-foreground font-semibold">{data.metrics.retrievalAccuracy}%</span>
+                </span>
                 <Separator orientation="vertical" className="h-4" />
-                <span>State: <span className="text-foreground font-semibold">{data.currentState}</span></span>
+                <span className="flex items-center gap-1.5">
+                  <Zap className="w-3 h-3 text-amber-500" />
+                  Latency: <span className="text-foreground font-semibold">{data.metrics.queryTimeMs}ms</span>
+                </span>
               </div>
-
-              {/* Metrics */}
-              <div className="grid grid-cols-3 gap-3">
-                <Card className="glass-panel overflow-hidden border-border/50">
-                  <CardHeader className="p-3 pb-1">
-                    <CardTitle className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                      <Activity className="w-3.5 h-3.5 text-primary" /> Accuracy
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-0">
-                    <div className="text-2xl font-display font-bold text-foreground">
-                      {data.metrics.retrievalAccuracy.toFixed(1)}%
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="glass-panel overflow-hidden border-border/50">
-                  <CardHeader className="p-3 pb-1">
-                    <CardTitle className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                      <Zap className="w-3.5 h-3.5 text-amber-500" /> Latency
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-0">
-                    <div className="text-2xl font-display font-bold text-foreground">
-                      {data.metrics.queryTimeMs}ms
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="glass-panel overflow-hidden border-border/50">
-                  <CardHeader className="p-3 pb-1">
-                    <CardTitle className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                      <Database className="w-3.5 h-3.5 text-cyan-500" /> Scanned
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-0">
-                    <div className="text-2xl font-display font-bold text-foreground">
-                      {data.metrics.articlesScanned}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* State Transition History */}
-              {data.stateTransitions && data.stateTransitions.length > 0 && (
-                <Card className="border-border/50">
-                  <CardHeader className="p-3 pb-2">
-                    <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      State Transitions
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-0">
-                    <div className="flex flex-col gap-1.5">
-                      {data.stateTransitions.map((t: any, i: number) => (
-                        <div key={i} className="flex items-center gap-2 text-xs font-mono">
-                          <div className={`w-2 h-2 rounded-full ${STATE_LABELS[t.from]?.color ?? "bg-gray-400"}`} />
-                          <span className="text-muted-foreground">{STATE_LABELS[t.from]?.label ?? t.from}</span>
-                          <ArrowRight className="w-3 h-3 text-muted-foreground/50" />
-                          <div className={`w-2 h-2 rounded-full ${STATE_LABELS[t.to]?.color ?? "bg-gray-400"}`} />
-                          <span className="text-foreground font-medium">{STATE_LABELS[t.to]?.label ?? t.to}</span>
-                          <span className="text-muted-foreground/60 ml-auto text-[10px]">
-                            {t.event}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Tool Calls */}
-              {data.toolCalls && data.toolCalls.length > 0 && (
-                <Card className="border-border/50">
-                  <CardHeader
-                    className="p-3 pb-2 cursor-pointer select-none"
-                    onClick={() => setToolsExpanded(!toolsExpanded)}
-                  >
-                    <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                      {toolsExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                      Tool Calls ({data.toolCalls.length})
-                    </CardTitle>
-                  </CardHeader>
-                  {toolsExpanded && (
-                    <CardContent className="p-3 pt-0 space-y-3">
-                      {data.toolCalls.map((tc: any, i: number) => (
-                        <div key={i} className="bg-secondary/40 rounded-lg p-3 border border-border/50 text-xs font-mono space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Badge variant="secondary" className="font-mono text-[10px]">{tc.tool}</Badge>
-                            <span className="text-muted-foreground">{tc.durationMs}ms</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Input:</span>
-                            <pre className="mt-1 text-[11px] text-foreground/80 whitespace-pre-wrap break-words bg-background/50 rounded p-2">
-                              {JSON.stringify(tc.input, null, 2)}
-                            </pre>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Output:</span>
-                            <pre className="mt-1 text-[11px] text-foreground/80 whitespace-pre-wrap break-words bg-background/50 rounded p-2">
-                              {JSON.stringify(tc.output, null, 2)}
-                            </pre>
-                          </div>
-                        </div>
-                      ))}
-                    </CardContent>
-                  )}
-                </Card>
-              )}
-
-              {/* Execution Logs */}
-              {data.logs && data.logs.length > 0 && (
-                <Card className="bg-slate-950 border-slate-800 shadow-xl overflow-hidden flex-1 min-h-[200px] flex flex-col">
-                  <CardHeader className="bg-slate-900 border-b border-slate-800 p-3">
-                    <CardTitle className="text-xs font-mono text-slate-400 flex items-center gap-2">
-                      <Terminal className="w-4 h-4" /> Agent Execution Logs
-                    </CardTitle>
-                  </CardHeader>
-                  <ScrollArea className="flex-1 p-4 terminal-scroll">
-                    <div className="font-mono text-[13px] leading-relaxed text-emerald-400/90 space-y-2">
-                      {data.logs.map((log: string, i: number) => (
-                        <div key={i} className="flex gap-3">
-                          <span className="text-slate-600 select-none">[{String(i + 1).padStart(2, "0")}]</span>
-                          <span className="break-words">{log}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </Card>
-              )}
             </div>
 
-            {/* Right Column: Semantic Results */}
-            <div className="lg:col-span-7 flex flex-col gap-4">
+            {/* Semantic Matches */}
+            <div className="space-y-4">
               <h3 className="font-display font-bold text-xl flex items-center gap-2">
                 Semantic Matches{" "}
                 <Badge variant="secondary" className="ml-2 font-mono">
@@ -385,17 +228,12 @@ export default function SearchPage() {
               </h3>
 
               {data.results.length === 0 ? (
-                <div className="p-12 text-center border-2 border-dashed border-border rounded-2xl bg-secondary/20">
-                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Search className="w-8 h-8 text-muted-foreground" />
-                  </div>
+                <Card className="p-12 text-center border-dashed">
                   <h4 className="text-lg font-semibold mb-1">No relevant documents found</h4>
-                  <p className="text-muted-foreground">
-                    The agent couldn't find any articles matching your query context.
-                  </p>
-                </div>
+                  <p className="text-muted-foreground">Try rephrasing your query.</p>
+                </Card>
               ) : (
-                <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   {data.results.map((result: any, index: number) => (
                     <motion.div
                       key={result.article.id}
@@ -407,7 +245,7 @@ export default function SearchPage() {
                         <CardHeader className="pb-3 flex flex-row items-start justify-between gap-4">
                           <div className="space-y-1.5">
                             <a 
-                              href={`${KNOWLEDGE_VAULT_URL}/article/${result.article.id}`} 
+                              href={`${KNOWLEDGE_VAULT_URL}/article/${intToHex(result.article.id)}`} 
                               target="_blank" 
                               rel="noopener noreferrer"
                               className="block group/link"
@@ -417,16 +255,15 @@ export default function SearchPage() {
                                 <ExternalLink className="w-4 h-4 opacity-0 group-hover/link:opacity-50 transition-opacity" />
                               </CardTitle>
                             </a>
-                            <div className="text-xs text-muted-foreground font-mono flex items-center gap-2">
-                              Indexed:{" "}
-                              {new Date(result.article.createdAt!).toLocaleDateString()}
+                            <div className="text-xs text-muted-foreground font-mono">
+                              Indexed: {new Date(result.article.createdAt).toLocaleDateString()}
                             </div>
                           </div>
                           <Badge
                             variant="outline"
                             className={`font-mono px-2.5 py-1 ${renderAccuracyColor(result.score)}`}
                           >
-                            Match: {result.score.toFixed(1)}%
+                            {result.score}% Match
                           </Badge>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -436,12 +273,9 @@ export default function SearchPage() {
                             </span>
                             {result.explanation}
                           </div>
-                          <div className="relative">
-                            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card z-10 pointer-events-none" />
-                            <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
-                              {result.article.content}
-                            </p>
-                          </div>
+                          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                            {result.article.content}
+                          </p>
                         </CardContent>
                       </Card>
                     </motion.div>
@@ -453,35 +287,20 @@ export default function SearchPage() {
         )}
       </AnimatePresence>
 
-      {/* Free Limit Reached Dialog */}
+      {/* Free Limit Dialog */}
       <Dialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
-        <DialogContent className="sm:max-w-md glass-card border-amber-500/20 shadow-2xl">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader className="flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mb-4">
-              <ShieldAlert className="w-8 h-8 text-amber-500" />
-            </div>
-            <DialogTitle className="text-2xl font-display font-bold">
-              Free Search Limit Reached
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground pt-2">
-              You've used all 4 of your free daily searches. 
-              Sign in to unlock unlimited queries and build your knowledge base.
+            <ShieldAlert className="w-12 h-12 text-amber-500 mb-4" />
+            <DialogTitle className="text-2xl font-bold">Limit Reached</DialogTitle>
+            <DialogDescription>
+              Please sign in to unlock unlimited queries and full knowledge management.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex flex-col sm:flex-row gap-3 pt-4">
-            <Button 
-              variant="outline" 
-              className="w-full sm:w-auto" 
-              onClick={() => setShowLimitDialog(false)}
-            >
-              Later
-            </Button>
-            <Button 
-              className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
-              onClick={() => setLocation("/auth")}
-            >
-              <LogIn className="w-4 h-4" />
-              Sign In Now
+          <DialogFooter className="flex gap-3 pt-4">
+            <Button variant="outline" onClick={() => setShowLimitDialog(false)}>Later</Button>
+            <Button className="gap-2" onClick={() => setLocation("/auth")}>
+              <LogIn className="w-4 h-4" /> Sign In
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -32,6 +32,16 @@ import { Badge } from "@/components/ui/badge";
 
 const KNOWLEDGE_VAULT_URL = "https://knowledge-vault.up.railway.app";
 
+/**
+ * Reverses the secure integer mapping to the original hex ObjectId
+ * for external Knowledge-Vault links.
+ */
+function intToHex(id: number | string): string {
+  if (typeof id === "string" && !/^\d+$/.test(id)) return id;
+  const num = typeof id === "string" ? BigInt(id) : BigInt(id);
+  return num.toString(16).padStart(24, "0");
+}
+
 export default function KnowledgeBasePage() {
   const { data: user } = useUser();
   const isAdmin = user?.isAdmin;
@@ -134,7 +144,7 @@ export default function KnowledgeBasePage() {
                       <TableCell className="font-medium align-top pt-4">
                         <div className="flex flex-col gap-1">
                           <a 
-                            href={`${KNOWLEDGE_VAULT_URL}/article/${article.id}`} 
+                            href={`${KNOWLEDGE_VAULT_URL}/article/${intToHex(article.id)}`} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="font-display text-foreground hover:text-primary transition-colors flex items-center gap-1.5 group/link"
@@ -157,7 +167,7 @@ export default function KnowledgeBasePage() {
                       <TableCell className="align-top pt-4 text-right">
                         {isAdmin && (
                           <div className="flex justify-end gap-2">
-                            <a href={`${KNOWLEDGE_VAULT_URL}/edit/${article.id}`} target="_blank" rel="noopener noreferrer">
+                            <a href={`${KNOWLEDGE_VAULT_URL}/edit/${intToHex(article.id)}`} target="_blank" rel="noopener noreferrer">
                               <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary hover:bg-primary/10">
                                 <ExternalLink className="w-4 h-4" />
                               </Button>
@@ -178,7 +188,7 @@ export default function KnowledgeBasePage() {
                 <div key={article.id} className="p-4 flex flex-col gap-3 hover:bg-secondary/20 transition-colors">
                   <div className="flex justify-between items-start gap-4">
                     <a 
-                      href={`${KNOWLEDGE_VAULT_URL}/article/${article.id}`} 
+                      href={`${KNOWLEDGE_VAULT_URL}/article/${intToHex(article.id)}`} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="font-display font-bold text-foreground leading-tight hover:text-primary"
@@ -187,7 +197,7 @@ export default function KnowledgeBasePage() {
                     </a>
                     {isAdmin && (
                       <div className="flex items-center gap-2">
-                        <a href={`${KNOWLEDGE_VAULT_URL}/edit/${article.id}`} target="_blank" rel="noopener noreferrer">
+                        <a href={`${KNOWLEDGE_VAULT_URL}/edit/${intToHex(article.id)}`} target="_blank" rel="noopener noreferrer">
                            <ExternalLink className="w-4 h-4 text-muted-foreground" />
                         </a>
                         <DeleteDialog article={article} onDelete={deleteArticle} isDeleting={isDeleting} />
