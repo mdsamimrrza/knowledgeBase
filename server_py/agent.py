@@ -273,8 +273,7 @@ async def _rerank_with_gemini(
         return (response.text or "").strip()
 
     content = await asyncio.to_thread(_call_gemini)
-    logger.info("Gemini model response: %s", content[:1200])
-    # Technical logs removed to keep user interface simple
+    # Technical logs removed to keep user interface and server logs clean
     parsed = _safe_json_loads(content)
     if not parsed:
         raise ValueError("Gemini reranker returned non-JSON content")

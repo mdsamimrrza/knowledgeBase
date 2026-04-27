@@ -62,24 +62,18 @@ export const searchResultSchema = z.object({
 });
 export type SearchResult = z.infer<typeof searchResultSchema>;
 
-const searchMetricsSchema = z
-  .object({
-    retrievalAccuracy: z.coerce.number(),
-    queryTimeMs: z.coerce.number(),
-    articlesScanned: z.coerce.number(),
-  })
-  .catch({
-    retrievalAccuracy: 0,
-    queryTimeMs: 0,
-    articlesScanned: 0,
-  });
+const searchMetricsSchema = z.object({
+  retrievalAccuracy: z.number(),
+  queryTimeMs: z.number(),
+  articlesScanned: z.number(),
+});
 
 export const searchResponseSchema = z.object({
   runId: z.string(),
   results: z.array(searchResultSchema),
   metrics: searchMetricsSchema,
-  stateTransitions: z.array(stateTransitionSchema).catch([]),
-  toolCalls: z.array(toolCallSchema).catch([]),
+  stateTransitions: z.array(stateTransitionSchema),
+  toolCalls: z.array(toolCallSchema),
   currentState: z.string(),
   seed: z.number().nullable().optional(),
   logs: z.array(z.string()).optional(),

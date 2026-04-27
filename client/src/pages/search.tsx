@@ -1,6 +1,8 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Search,
   Activity,
@@ -32,20 +34,31 @@ import {
 
 const KNOWLEDGE_VAULT_URL = "https://knowledge-vault.up.railway.app";
 
-function intToHex(id: number | string): string {
+function intToHex(id: number | string | undefined | null): string {
+  if (!id) return "0".repeat(24);
   if (typeof id === "string" && !/^\d+$/.test(id)) return id;
-  const num = typeof id === "string" ? BigInt(id) : BigInt(id);
-  return num.toString(16).padStart(24, "0");
+  try {
+    const num = typeof id === "string" ? BigInt(id) : BigInt(id as number);
+    return num.toString(16).padStart(24, "0");
+  } catch (e) {
+    return String(id);
+  }
 }
 
-function normalizePercent(score: number | null | undefined): number {
-  const safe = Number(score ?? 0);
+function normalizePercent(score: number | string | null | undefined): number {
+  if (score === null || score === undefined) return 0;
+  const safe = typeof score === "string" ? parseFloat(score) : score;
   if (!Number.isFinite(safe)) return 0;
   return safe > 100 ? safe / 100 : safe;
 }
 
 function cleanLogLine(line: string): string {
   return line.replace(/^\[[^\]]+\]\s*/, "").trim();
+}
+
+function formatWikiLinks(text: string): string {
+  // Convert [[Link]] to bold text for cleaner look in results
+  return text.replace(/\[\[([^\]]+)\]\]/g, "**$1**");
 }
 
 export default function SearchPage() {
@@ -241,15 +254,17 @@ export default function SearchPage() {
                             </Badge>
                           </CardHeader>
                           <CardContent className="space-y-5">
-                            <div className="bg-secondary/50 p-4 rounded-xl text-[10px] leading-relaxed border border-border/50 text-foreground/95">
-                              <span className="font-semibold text-primary mb-2 flex items-center gap-2 text-base">
-                                <Sparkles className="w-5 h-5" /> Agent Reasoning:
+                            <div className="bg-secondary/50 p-4 rounded-xl text-xs leading-relaxed border border-border/50 text-foreground/95">
+                              <span className="font-semibold text-primary mb-2 flex items-center gap-2 text-sm">
+                                <Sparkles className="w-4 h-4" /> Agent Reasoning:
                               </span>
                               {result.explanation}
                             </div>
-                            <p className="text-xs text-muted-foreground leading-relaxed">
-                              {result.article.content}
-                            </p>
+                            <div className="prose prose-sm prose-invert max-w-none text-muted-foreground leading-relaxed">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {formatWikiLinks(result.article.content)}
+                              </ReactMarkdown>
+                            </div>
                           </CardContent>
                         </Card>
                       </motion.div>

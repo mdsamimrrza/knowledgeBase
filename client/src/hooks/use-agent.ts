@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@shared/routes";
-import { type SearchRequest } from "@shared/schema";
+import { type SearchRequest, type SearchResponse } from "@shared/schema";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,7 +24,7 @@ export function useAgentSearch() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (data: SearchRequest) => {
+    mutationFn: async (data: SearchRequest): Promise<SearchResponse> => {
       const validated = api.agent.search.input.parse(data);
       
       const res = await fetch(api.agent.search.path, {
