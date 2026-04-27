@@ -1,6 +1,6 @@
 # NeuralQuery — AI Knowledge Base Agent
 
-NeuralQuery is a production-grade agentic knowledge base system designed for secure, semantic document retrieval. Built with a high-performance **FastAPI** backend and a modern **React** frontend, it utilizes **Google Gemini** to rank and explain search results with human-like reasoning.
+NeuralQuery is a production-grade agentic knowledge base system designed for secure, semantic document retrieval. Built with a high-performance **FastAPI** backend and a modern **React** frontend, it uses **Google Gemini** to rank and explain search results with human-like reasoning.
 
 ---
 
@@ -40,7 +40,7 @@ The system adheres to a strict "Secure-by-Design" philosophy:
 ### Backend
 - **Framework**: Python 3.11 + FastAPI
 - **Database**: MongoDB Atlas (via Motor)
-- **AI Engine**: Google Gemini API
+- **AI Engine**: Google Gemini
 - **Security**: JWT (HS256), Bcrypt, SlowAPI (Rate Limiting)
 
 ---
@@ -65,7 +65,7 @@ The system adheres to a strict "Secure-by-Design" philosophy:
     ```bash
     python -m venv venv
     .\venv\Scripts\activate  # Windows
-    pip install -r requirements.txt
+    pip install -r server_py/requirements.txt
     ```
 
 3.  **Setup Frontend**:
@@ -79,6 +79,7 @@ The system adheres to a strict "Secure-by-Design" philosophy:
     MONGODB_URI=your_mongodb_uri
     JWT_SECRET=your_jwt_secret
     GEMINI_API_KEY=your_gemini_key
+    GEMINI_MODEL=gemini-2.5-flash
     ADMIN_KEY=your_secure_admin_key
     CORS_ORIGINS=http://localhost:5173
     ```

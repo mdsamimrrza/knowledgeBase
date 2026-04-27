@@ -32,7 +32,7 @@ def _to_article(doc: dict[str, Any]) -> Article:
     """Map a MongoDB document to a secure Article Pydantic model."""
     has_author = bool(doc.get("authorId"))
     return Article(
-        id=_oid_to_int(doc["_id"]),
+        id=str(doc["_id"]),
         title=doc.get("title", ""),
         content=doc.get("content", ""),
         metadata=doc.get("metadata", {}),
@@ -87,11 +87,13 @@ class DatabaseStorage:
         """Fetch a single article by its mapped integer ID or ObjectId string."""
         db = get_db()
         try:
-            if isinstance(article_id, int):
+            if isinstance(article_id, str) and ObjectId.is_valid(article_id):
+                oid = ObjectId(article_id)
+            elif isinstance(article_id, int):
                 oid = ObjectId(_int_to_oid_str(article_id))
             else:
                 oid = ObjectId(article_id)
-        except (InvalidId, ValueError):
+        except (InvalidId, ValueError, TypeError):
             return None
 
         doc = await db.articles.find_one({"_id": oid})
@@ -139,11 +141,13 @@ class DatabaseStorage:
         """Delete an article by its mapped integer ID or ObjectId string."""
         db = get_db()
         try:
-            if isinstance(article_id, int):
+            if isinstance(article_id, str) and ObjectId.is_valid(article_id):
+                oid = ObjectId(article_id)
+            elif isinstance(article_id, int):
                 oid = ObjectId(_int_to_oid_str(article_id))
             else:
                 oid = ObjectId(article_id)
-        except (InvalidId, ValueError):
+        except (InvalidId, ValueError, TypeError):
             return False
 
         result = await db.articles.delete_one({"_id": oid})

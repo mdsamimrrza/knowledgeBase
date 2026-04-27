@@ -14,7 +14,7 @@ class InsertArticle(BaseModel):
 
 
 class Article(BaseModel):
-    id: int
+    id: str
     title: str
     content: str
     metadata: dict[str, Any] = Field(default_factory=dict)
@@ -50,6 +50,12 @@ class ToolCall(BaseModel):
     durationMs: int
 
 
+class Metrics(BaseModel):
+    retrievalAccuracy: int
+    queryTimeMs: int
+    articlesScanned: int
+
+
 # ---------- Search ----------
 class SearchRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=500)
@@ -58,15 +64,21 @@ class SearchRequest(BaseModel):
 
 class SearchResult(BaseModel):
     article: Article
-    score: int
-    explanation: str
+    score: Optional[int] = None
+    explanation: Optional[str] = None
 
 
 class SearchResponse(BaseModel):
     runId: str
     results: list[SearchResult]
-    metrics: dict[str, int]
+    metrics: Metrics
+    stateTransitions: list[StateTransition] = Field(default_factory=list)
+    toolCalls: list[ToolCall] = Field(default_factory=list)
     currentState: str
+    seed: Optional[int] = None
+    logs: list[str] = Field(default_factory=list)
+
+    model_config = {"populate_by_name": True}
 
 
 # ---------- Evaluation ----------

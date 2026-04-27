@@ -51,7 +51,7 @@ export type ToolCall = z.infer<typeof toolCallSchema>;
 // ---------- Search Request (with seed) ----------
 export const searchSchema = z.object({
   query: z.string(),
-  seed: z.number().nullable().optional(),
+  seed: z.number().optional(),
 });
 export type SearchRequest = z.infer<typeof searchSchema>;
 
@@ -62,16 +62,24 @@ export const searchResultSchema = z.object({
 });
 export type SearchResult = z.infer<typeof searchResultSchema>;
 
+const searchMetricsSchema = z
+  .object({
+    retrievalAccuracy: z.coerce.number(),
+    queryTimeMs: z.coerce.number(),
+    articlesScanned: z.coerce.number(),
+  })
+  .catch({
+    retrievalAccuracy: 0,
+    queryTimeMs: 0,
+    articlesScanned: 0,
+  });
+
 export const searchResponseSchema = z.object({
   runId: z.string(),
   results: z.array(searchResultSchema),
-  metrics: z.object({
-    retrievalAccuracy: z.number(),
-    queryTimeMs: z.number(),
-    articlesScanned: z.number(),
-  }),
-  stateTransitions: z.array(stateTransitionSchema),
-  toolCalls: z.array(toolCallSchema),
+  metrics: searchMetricsSchema,
+  stateTransitions: z.array(stateTransitionSchema).catch([]),
+  toolCalls: z.array(toolCallSchema).catch([]),
   currentState: z.string(),
   seed: z.number().nullable().optional(),
   logs: z.array(z.string()).optional(),

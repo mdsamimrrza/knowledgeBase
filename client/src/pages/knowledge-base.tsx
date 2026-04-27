@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 import { FileText, Trash2, Database, AlertCircle, ShieldCheck, LogIn, ExternalLink, PlusCircle } from "lucide-react";
@@ -47,7 +47,21 @@ export default function KnowledgeBasePage() {
   const isAdmin = user?.isAdmin;
   const [, setLocation] = useLocation();
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useArticles(10);
-  const articles = data?.pages.flat() || [];
+  const articles = useMemo(() => {
+    const seen = new Set<string>();
+    const uniqueArticles = [] as typeof data extends undefined ? never[] : NonNullable<typeof data>["pages"][number];
+
+    for (const page of data?.pages ?? []) {
+      for (const article of page) {
+        const id = String(article.id);
+        if (seen.has(id)) continue;
+        seen.add(id);
+        uniqueArticles.push(article);
+      }
+    }
+
+    return uniqueArticles;
+  }, [data]);
   const { mutate: deleteArticle, isPending: isDeleting } = useDeleteArticle();
 
   return (

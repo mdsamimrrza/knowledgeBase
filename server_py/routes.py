@@ -170,7 +170,7 @@ async def delete_article(
     return None
 
 
-@router.post("/agent/search", response_model=SearchResponse)
+@router.post("/agent/search", response_model=SearchResponse, response_model_by_alias=True)
 @limiter.limit("10/minute")
 async def search(
     request: Request,

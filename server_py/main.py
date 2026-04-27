@@ -29,9 +29,6 @@ from .db import close_db, connect_db
 from .routes import router, limiter
 from .schemas import InsertArticle
 from .storage import storage
-from .agent import configure_gemini
-
-
 async def _seed_database() -> None:
     """Initialize the database with default articles if empty."""
     articles = await storage.get_articles(limit=1)
@@ -65,7 +62,6 @@ async def lifespan(app: FastAPI):
     """Lifecycle events for the FastAPI application."""
     # Startup
     try:
-        configure_gemini()
         await connect_db()
         await _seed_database()
         logger.info("NeuralQuery API startup complete")
