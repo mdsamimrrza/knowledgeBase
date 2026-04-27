@@ -108,6 +108,14 @@ def _normalize_term(term: str) -> str:
     return normalized
 
 
+def _mask_id(id_val: Any) -> str:
+    """Mask sensitive IDs for user logs (e.g. 69ea...265)."""
+    s = str(id_val)
+    if len(s) <= 8:
+        return "****"
+    return f"{s[:4]}...{s[-4:]}"
+
+
 def _matches_term(term: str, text: str) -> bool:
     """Match by direct inclusion, normalized inclusion, or shared prefix."""
     if not term:
@@ -266,9 +274,7 @@ async def _rerank_with_gemini(
 
     content = await asyncio.to_thread(_call_gemini)
     logger.info("Gemini model response: %s", content[:1200])
-    if log_fn:
-        safe_content = re.sub(r"\s+", " ", content).strip()
-        log_fn(f"Gemini model response: {safe_content[:800]}")
+    # Technical logs removed to keep user interface simple
     parsed = _safe_json_loads(content)
     if not parsed:
         raise ValueError("Gemini reranker returned non-JSON content")
@@ -308,16 +314,22 @@ async def agent_search(query: str, seed: int | None = None, user_id: str | None 
     internal_logs: list[str] = []
 
     def _log(message: str) -> None:
-        internal_logs.append(f"[{datetime.now(timezone.utc).isoformat()}] {message}")
+        # Automatically mask potential IDs and UUIDs in all log messages
+        # Mask 24-char hex IDs
+        masked = re.sub(r"([0-9a-f]{24})", lambda m: _mask_id(m.group(0)), message)
+        # Mask 36-char UUIDs
+        masked = re.sub(r"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", 
+                        lambda m: f"{m.group(0)[:4]}...{m.group(0)[-4:]}", masked)
+        internal_logs.append(f"[{datetime.now(timezone.utc).isoformat()}] {masked}")
 
     try:
         state_machine.transition("query_received", AgentState.RECEIVING_QUERY)
-        _log(f"Run {run_id} started")
+        _log("Initializing search request...")
 
         state_machine.transition("fetch_articles", AgentState.FETCHING_ARTICLES)
         all_articles = await storage.get_articles(limit=1000, user_id=user_id)
         await tool_json_store_search(all_articles)
-        _log(f"Scanned {len(all_articles)} articles")
+        _log("Scanning knowledge base for relevant content...")
 
         state_machine.transition("rank_articles", AgentState.RANKING)
         keyword_candidates = _filter_ranked_matches(
@@ -330,16 +342,16 @@ async def agent_search(query: str, seed: int | None = None, user_id: str | None 
             candidate_articles = [article for article in all_articles if str(article.id) in candidate_ids]
             try:
                 ranked_matches = await _rerank_with_gemini(query, candidate_articles, log_fn=_log)
-                _log(f"Gemini reranked {len(candidate_articles)} candidate articles")
+                _log("Applying semantic ranking to improve accuracy...")
             except Exception as exc:
                 logger.warning("Gemini reranking failed: %s", str(exc))
-                # Suppress the technical error from the user-visible logs
-                _log("Refining results with semantic search (keyword fallback active)")
+                # Suppress technical errors with a simple status message
+                _log("Processing your search request...")
         if not ranked_matches and all_articles:
             ranked_matches = _fallback_recent_matches(all_articles, limit=5)
-            _log("No strong local keyword matches; returning recent article fallback")
+            _log("No direct matches found; showing most recent articles.")
         top_match = ranked_matches[0] if ranked_matches else {"id": None, "score": 0, "explanation": "No match found"}
-        _log(f"Local search returned {len(ranked_matches)} matches")
+        _log(f"Search completed. Found {len(ranked_matches)} relevant results.")
 
         state_machine.transition("build_response", AgentState.RESPONDING)
         results: list[dict[str, Any]] = []
