@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 
-const KNOWLEDGE_VAULT_URL = "https://knowledge-vault.up.railway.app";
+const KNOWLEDGE_VAULT_URL = "https://knowledge-vault-silk.vercel.app";
 
 /**
  * Reverses the secure integer mapping to the original hex ObjectId

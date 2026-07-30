@@ -32,7 +32,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-const KNOWLEDGE_VAULT_URL = "https://knowledge-vault.up.railway.app";
+const KNOWLEDGE_VAULT_URL = "https://knowledge-vault-silk.vercel.app";
 
 function intToHex(id: number | string | undefined | null): string {
   if (!id) return "0".repeat(24);

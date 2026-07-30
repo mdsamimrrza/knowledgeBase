@@ -9,7 +9,7 @@ NeuralQuery is a production-grade agentic knowledge base system designed for sec
 - **Semantic Agentic Search**: Beyond keyword matching. The agent understands context, ranks results by relevance, and provides natural language explanations for its matches.
 - **Secure Retrieval Pipeline**: Multi-step agent architecture with strict guardrails to prevent prompt injection and data leakage.
 - **Production-Ready Security**: Implements industry-standard headers, rate limiting, and private internal audit logging.
-- **Unified Knowledge Ecosystem**: Seamlessly integrates with [Knowledge Vault](https://knowledge-vault.up.railway.app) for document management.
+- **Unified Knowledge Ecosystem**: Seamlessly integrates with [Knowledge Vault](https://knowledge-vault-silk.vercel.app) for document management.
 - **Deterministic ID Privacy**: Uses secure, reversible integer mapping for all internal MongoDB ObjectIDs to prevent exposure of database internals.
 
 ---

@@ -92,8 +92,8 @@ else:
         "http://localhost:5173", 
         "http://localhost:5000", 
         "http://127.0.0.1:5173", 
-        "https://knowledgebase-wdt5.onrender.com", 
-        "https://knowledge-vault.up.railway.app"
+        "https://knowledge-vault-silk.vercel.app/", 
+        "https://knowledge-vault-silk.vercel.app"
     ]
 
 app.add_middleware(

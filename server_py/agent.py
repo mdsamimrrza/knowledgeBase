@@ -20,22 +20,22 @@ logger = logging.getLogger(__name__)
 MAX_STEPS = 10
 TOOL_ALLOWLIST: frozenset[str] = frozenset({"json_store_search"})
 run_logs: list[dict[str, Any]] = []
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-RERANK_CANDIDATE_LIMIT = 8
-MODEL_CONTENT_PREVIEW_CHARS = 1400
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
+RERANK_CANDIDATE_LIMIT = 5
+MODEL_CONTENT_PREVIEW_CHARS = 800
 
 _gemini_api_key = os.getenv("GEMINI_API_KEY")
 
 
 def _resolve_gemini_model(configured_model: str) -> str:
-    """Pick a valid Gemini model for generateContent in the current API/account."""
+    """Pick a valid Gemini/Gemma model for generateContent in the current API/account."""
     try:
         available = []
         for model in genai.list_models():
             methods = set(getattr(model, "supported_generation_methods", []) or [])
             name = str(getattr(model, "name", ""))
-            # Filter for models that support generateContent and are in the 'models/gemini' namespace
-            if name.startswith("models/gemini") and "generateContent" in methods:
+            # Filter for models that support generateContent and are in the 'models/gemini' or 'models/gemma' namespace
+            if (name.startswith("models/gemini") or name.startswith("models/gemma")) and "generateContent" in methods:
                 available.append(name.replace("models/", ""))
 
         if not available:
@@ -45,8 +45,15 @@ def _resolve_gemini_model(configured_model: str) -> str:
         if configured_model in available:
             return configured_model
 
-        # Prefer stable/standard models over 'latest' or 'preview' if possible
-        preferred = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash", "gemini-3-flash-preview"]
+        # Prefer high-quota Lite models, standard Flash models, and Gemma fallbacks
+        preferred = [
+            "gemini-3.1-flash-lite",
+            "gemini-3.5-flash-lite",
+            "gemini-2.5-flash-lite",
+            "gemini-3-flash-preview",
+            "gemini-2.0-flash",
+            "gemma-4-26b",
+        ]
         for p in preferred:
             if p in available:
                 return p

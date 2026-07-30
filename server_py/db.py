@@ -21,14 +21,28 @@ async def connect_db() -> AsyncIOMotorDatabase:
         mongo_uri,
         maxPoolSize=20,
         minPoolSize=5,
-        serverSelectionTimeoutMS=5000,
-        connectTimeoutMS=10000,
+        serverSelectionTimeoutMS=30000,
+        connectTimeoutMS=30000,
+        socketTimeoutMS=30000,
+        tls=True,
+        retryWrites=True,
+        retryReads=True,
     )
     # Use the DB name from env var; default is the shared KV database
     db_name = os.getenv("DB_NAME", "knowledge-vault")
     _db = _client.get_default_database(default=db_name)
-    # Force a connection check
-    await _client.admin.command("ping")
+    # Force a connection check with retries
+    import asyncio
+    for attempt in range(3):
+        try:
+            await _client.admin.command("ping")
+            break
+        except Exception as e:
+            if attempt < 2:
+                print(f"MongoDB connection attempt {attempt + 1} failed, retrying in 3s... ({e})")
+                await asyncio.sleep(3)
+            else:
+                raise
     # Create indexes for optimal pagination and retrieval
     await _db.articles.create_index([("createdAt", -1)])
     # Anonymous usage tracking: unique IP and auto-reset after 24h
